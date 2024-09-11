@@ -31,8 +31,6 @@ def estimate_error(true_dcm, estimated_dcm):
 
     BbarB_dcm = np.dot(estimated_dcm, np.transpose(true_dcm))
 
-    print(BbarB_dcm)
-
     _, phi_upper = prv_functions.get_prv_params_from_dcm(BbarB_dcm)
 
     return math.degrees(phi_upper)
