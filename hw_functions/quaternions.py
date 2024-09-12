@@ -4,6 +4,7 @@ import numpy as np
 
 from . import dcm_functions 
 
+
 def quaternion_to_dcm(beta_vec):
 
     b0, b1, b2, b3 = beta_vec[0], beta_vec[1], beta_vec[2], beta_vec[3] 

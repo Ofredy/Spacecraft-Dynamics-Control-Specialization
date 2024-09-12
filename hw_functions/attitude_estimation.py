@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from . import prv_functions
+from . import prv_functions, quaternions
 
 
 def triad_method(sensor_1, sensor_2, inertial_1, inertial_2):
@@ -26,6 +26,44 @@ def triad_method(sensor_1, sensor_2, inertial_1, inertial_2):
     NT_dcm = np.stack((N_t1, N_t2, N_t3), axis=1) 
 
     return np.dot(Bbar_T_dcm, np.transpose(NT_dcm))
+
+def devenport_q_method(sensor_measurements, inertials, weights=None):
+
+    if weights == None:
+        weights = np.ones(shape=sensor_measurements.shape[0])
+
+    sensor_norms = np.linalg.norm(sensor_measurements, axis=1, keepdims=True)
+    sensor_measurements /= sensor_norms
+
+    inertial_norms = np.linalg.norm(inertials, axis=1, keepdims=True)
+    inertials /= inertial_norms
+
+    B = np.zeros(shape=(3, 3))
+
+    for idx, measurement in enumerate(sensor_measurements):
+
+        measurement = np.expand_dims(measurement, axis=-1)
+        inertial = np.expand_dims(inertials[idx], axis=-1)
+
+        B += weights[idx] * measurement @ np.transpose(inertial)
+
+    S = B + np.transpose(B)
+
+    sigma = np.trace(B)
+
+    Z = np.array([[ B[1][2]-B[2][1] ], [ B[2][0]-B[0][2] ], [ B[0][1]-B[1][0] ]])  # 3x1 vector
+
+    # Create the 4x4 matrix
+    K = np.block([[sigma, Z.T], [Z, S-sigma*np.eye(3)]])
+
+    eigenvalues, eigenvectors = np.linalg.eig(K)
+
+    beta = eigenvectors[np.argmax(eigenvalues)]
+
+    if not quaternions.is_short_way_quaternion(beta[0]):
+        beta = beta * -1
+
+    return quaternions.quaternion_to_dcm(beta)
 
 def estimate_error(true_dcm, estimated_dcm):
 
