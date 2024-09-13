@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from . import prv_functions, quaternions, crps
+from . import prv_functions, quaternions, crps, helper_functions
 
 
 def triad_method(sensor_1, sensor_2, inertial_1, inertial_2):
@@ -113,6 +113,56 @@ def quest_method(sensor_measurements, inertials, weights=None):
 
     return crps.crp_to_dcm(q_bar)
 
+def create_olae_weight_matrix(vec, block_size=3):
+    
+    # Define the fixed size of the output matrix
+    matrix_size = len(vec) * block_size
+    
+    # Initialize the output matrix
+    output_matrix = np.zeros((matrix_size, matrix_size))
+    
+    start_idx = 0
+    # Fill the output matrix with block diagonal values
+    for value in vec:
+        end_idx = start_idx + block_size
+        # Define the block (block_size x block_size matrix) for the current vector element
+        block = np.eye(block_size) * value
+        # Place the block in the appropriate position
+        output_matrix[start_idx:end_idx, start_idx:end_idx] = block
+        # Move to the next block position
+        start_idx = end_idx
+    
+    return output_matrix
+
+def optimal_linear_attitude_estimator(sensor_measurements, inertials, weights=None):
+
+    if weights == None:
+        weights = np.ones(shape=sensor_measurements.shape[0])
+
+    sensor_norms = np.linalg.norm(sensor_measurements, axis=1, keepdims=True)
+    sensor_measurements /= sensor_norms
+
+    inertial_norm = np.linalg.norm(sensor_measurements, axis=1, keepdims=True)
+    inertials /= inertial_norm
+
+    # find s & d
+    s = sensor_measurements + inertials
+    d = sensor_measurements - inertials
+
+    # construct weight matrix
+    weight_matrix = create_olae_weight_matrix(weights)
+
+    # construct tilde matrix
+    S = None
+    
+    for s_vec in s:
+
+        S = helper_functions.get_tilde_matrix(s_vec) if S is None else np.vstack((S, helper_functions.get_tilde_matrix(s_vec)))
+
+    q_bar = np.linalg.inv( np.transpose(S) @ weight_matrix @ S ) @ np.transpose(S) @ weight_matrix @ d.reshape(-1, 1)
+
+    return crps.crp_to_dcm(q_bar.reshape(-1))
+    
 def estimate_error(true_dcm, estimated_dcm):
 
     BbarB_dcm = np.dot(estimated_dcm, np.transpose(true_dcm))
