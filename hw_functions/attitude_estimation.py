@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from . import prv_functions, quaternions
+from . import prv_functions, quaternions, crps
 
 
 def triad_method(sensor_1, sensor_2, inertial_1, inertial_2):
@@ -61,6 +61,57 @@ def devenport_q_method(sensor_measurements, inertials, weights=None):
         beta = beta * -1
 
     return quaternions.quaternion_to_dcm(beta)
+
+def f_opt_eig(opt_eig, K):
+
+    return np.linalg.det( K - opt_eig*np.eye(4) )
+
+def f_p_opt_eig(opt_eig, K):
+
+    return -1 * np.linalg.det( K - opt_eig*np.eye(4) ) * np.trace( np.linalg.inv( K - opt_eig*np.eye(4) ) )
+
+def opt_eig_newton(opt_eig, K):
+
+    for _ in range(3):
+
+        opt_eig = opt_eig - f_opt_eig(opt_eig, K) / f_p_opt_eig(opt_eig, K)
+
+    return opt_eig
+
+def quest_method(sensor_measurements, inertials, weights=None):
+
+    if weights == None:
+        weights = np.ones(shape=sensor_measurements.shape[0])
+
+    opt_eig = np.sum(weights)
+
+    sensor_norms = np.linalg.norm(sensor_measurements, axis=1, keepdims=True)
+    sensor_measurements /= sensor_norms
+
+    B = np.zeros(shape=(3, 3))
+
+    for idx, measurement in enumerate(sensor_measurements):
+
+        measurement = np.expand_dims(measurement, axis=-1)
+        inertial = np.expand_dims(inertials[idx], axis=-1)
+
+        B += weights[idx] * measurement @ np.transpose(inertial)
+
+    S = B + np.transpose(B)
+
+    sigma = np.trace(B)
+
+    Z = np.array([[ B[1][2]-B[2][1] ], [ B[2][0]-B[0][2] ], [ B[0][1]-B[1][0] ]])  # 3x1 vector
+
+    # Create the 4x4 matrix
+    K = np.block([[sigma, Z.T], [Z, S-sigma*np.eye(3)]])
+
+    opt_eig = opt_eig_newton(opt_eig, K)
+
+    # solving for crps
+    q_bar = np.linalg.inv( ( opt_eig + sigma )*np.eye(3) - S ) @ Z
+
+    return crps.crp_to_dcm(q_bar)
 
 def estimate_error(true_dcm, estimated_dcm):
 
