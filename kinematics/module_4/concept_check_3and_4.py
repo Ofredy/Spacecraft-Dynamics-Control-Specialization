@@ -14,3 +14,13 @@ inertials = np.array([[ -0.1517, -0.9669, 0.2050 ],
 
 
 print(attitude_estimation.devenport_q_method(sensor_measurements, inertials)) 
+
+########## example problem ##########
+sensor_measurements = np.array([[ 0.8190, -0.5282, 0.2242 ],
+                                [ -0.3138, -0.1584, 0.9362 ]])
+
+inertials = np.array([[ 1.0, 0.0, 0.0 ],
+                      [ 0.0, 0.0, 1.0 ]])
+
+
+print(attitude_estimation.devenport_q_method(sensor_measurements, inertials)) 

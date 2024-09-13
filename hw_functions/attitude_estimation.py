@@ -35,9 +35,6 @@ def devenport_q_method(sensor_measurements, inertials, weights=None):
     sensor_norms = np.linalg.norm(sensor_measurements, axis=1, keepdims=True)
     sensor_measurements /= sensor_norms
 
-    inertial_norms = np.linalg.norm(inertials, axis=1, keepdims=True)
-    inertials /= inertial_norms
-
     B = np.zeros(shape=(3, 3))
 
     for idx, measurement in enumerate(sensor_measurements):
@@ -58,7 +55,7 @@ def devenport_q_method(sensor_measurements, inertials, weights=None):
 
     eigenvalues, eigenvectors = np.linalg.eig(K)
 
-    beta = eigenvectors[np.argmax(eigenvalues)]
+    beta = eigenvectors[:, np.argmax(eigenvalues)]
 
     if not quaternions.is_short_way_quaternion(beta[0]):
         beta = beta * -1
