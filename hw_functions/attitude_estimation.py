@@ -142,7 +142,7 @@ def optimal_linear_attitude_estimator(sensor_measurements, inertials, weights=No
     sensor_norms = np.linalg.norm(sensor_measurements, axis=1, keepdims=True)
     sensor_measurements /= sensor_norms
 
-    inertial_norm = np.linalg.norm(sensor_measurements, axis=1, keepdims=True)
+    inertial_norm = np.linalg.norm(inertials, axis=1, keepdims=True)
     inertials /= inertial_norm
 
     # find s & d

@@ -11,4 +11,4 @@ sensor_measurements = np.array([[ 0.8273, 0.5541, -0.0920 ],
 inertials = np.array([[ -0.1517, -0.9669, 0.2050 ],
                       [ -0.8393, 0.4494, -0.3044 ]])
 
-print(attitude_estimation.optimal_linear_attitude_estimator(sensor_measurements, inertials)) 
+print(attitude_estimation.optimal_linear_attitude_estimator(sensor_measurements, inertials))
