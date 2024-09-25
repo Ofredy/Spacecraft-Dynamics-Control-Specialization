@@ -36,6 +36,10 @@ def find_total_ke(masses, velocities):
 
     return translational_ke, rotational_ke
 
+def find_rot_ke(inertia_tensor, angular_velcity):
+
+    return (1/2) * np.transpose(angular_velcity) @ inertia_tensor @ angular_velcity
+
 def find_linear_momentum(masses, velocities):
 
     total_mass, velocity_cm = find_velocity_of_cm(masses, velocities)
