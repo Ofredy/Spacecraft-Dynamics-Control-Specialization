@@ -1,6 +1,9 @@
 # library imports
 import numpy as np
 
+# our import
+from . import helper_functions
+
 
 def find_cm(masses, positions):
 
@@ -39,7 +42,7 @@ def find_linear_momentum(masses, velocities):
 
     return total_mass * velocity_cm
 
-def find_angular_momentum(masses, positions, velocities):
+def find_total_angular_momentum(masses, positions, velocities):
 
     # angular momentum of origin
     origin_am = np.zeros(shape=positions[0].shape)
@@ -61,3 +64,43 @@ def find_angular_momentum(masses, positions, velocities):
         cm_am += np.cross(relative_positions[idx], masses[idx] * relative_velocities[idx])
 
     return origin_am, cm_am
+
+def find_rot_angular_momentum(inertia_tensor, angular_velocity):
+
+    return inertia_tensor @ angular_velocity
+    
+def parallel_axis_theorem(total_mass, inertia_tensor_cm, inertia_offset):
+
+    offset_tilde = helper_functions.get_tilde_matrix(inertia_offset)
+
+    return inertia_tensor_cm + total_mass * offset_tilde @ np.transpose(offset_tilde)
+
+def inertia_tensor_cordinate_transform(dcm, inertia_tensor):
+
+    return dcm @ inertia_tensor @ np.transpose(dcm)
+
+def find_principal_inertia_tensor(inertia_tensor):
+
+    eigen_values, eigen_vectors = np.linalg.eig(inertia_tensor)
+    eigen_vectors = np.transpose(eigen_vectors)
+
+    eigen_vectors = eigen_vectors / np.linalg.norm(eigen_vectors)
+    
+    if np.dot( np.cross(eigen_vectors[0], eigen_vectors[1]), eigen_vectors[2] ) != 1:
+        eigen_vectors[1] = -1 * eigen_vectors[1]
+
+    return eigen_values, eigen_vectors
+
+def sort_principal_inertia_tensor(eigen_values, eigen_vectors):
+
+    # Combine eigenvalues and eigenvectors for sorting
+    eigen_pairs = [(eigen_values[i], eigen_vectors[i]) for i in range(len(eigen_values))]
+
+    # Sort by eigenvalue in descending order
+    sorted_eigen_pairs = sorted(eigen_pairs, key=lambda x: x[0], reverse=True)
+
+    # Separate sorted eigenvalues and eigenvectors
+    sorted_eigenvalues = np.array([pair[0] for pair in sorted_eigen_pairs])
+    sorted_eigenvectors = np.array([pair[1] for pair in sorted_eigen_pairs])
+
+    return sorted_eigenvalues, sorted_eigenvectors

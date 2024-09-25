@@ -18,4 +18,4 @@ velocities = np.array([[ 2, 1, 1 ],
                        [ 3, 2, -1 ],
                        [ 0, 0, 1 ]])
 
-print(dynamic_functions.find_angular_momentum(masses, positions, velocities))
+print(dynamic_functions.find_total_angular_momentum(masses, positions, velocities))
