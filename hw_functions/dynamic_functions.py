@@ -87,24 +87,17 @@ def find_principal_inertia_tensor(inertia_tensor):
 
     eigen_values, eigen_vectors = np.linalg.eig(inertia_tensor)
     eigen_vectors = np.transpose(eigen_vectors)
-
-    eigen_vectors = eigen_vectors / np.linalg.norm(eigen_vectors)
     
-    if np.dot( np.cross(eigen_vectors[0], eigen_vectors[1]), eigen_vectors[2] ) != 1:
+    if np.dot( np.cross(eigen_vectors[0], eigen_vectors[1]), eigen_vectors[2] ) < 0:
         eigen_vectors[1] = -1 * eigen_vectors[1]
 
     return eigen_values, eigen_vectors
 
 def sort_principal_inertia_tensor(eigen_values, eigen_vectors):
 
-    # Combine eigenvalues and eigenvectors for sorting
-    eigen_pairs = [(eigen_values[i], eigen_vectors[i]) for i in range(len(eigen_values))]
+    # Sort the eigenvalues and corresponding eigenvectors
+    sorted_indices = np.argsort(eigen_values)[::-1]  # Sort from largest to smallest
+    principal_inertias = eigen_values[sorted_indices]
+    principal_axes = eigen_vectors[sorted_indices, :]
 
-    # Sort by eigenvalue in descending order
-    sorted_eigen_pairs = sorted(eigen_pairs, key=lambda x: x[0], reverse=True)
-
-    # Separate sorted eigenvalues and eigenvectors
-    sorted_eigenvalues = np.array([pair[0] for pair in sorted_eigen_pairs])
-    sorted_eigenvectors = np.array([pair[1] for pair in sorted_eigen_pairs])
-
-    return sorted_eigenvalues, sorted_eigenvectors
+    return principal_inertias, principal_axes
