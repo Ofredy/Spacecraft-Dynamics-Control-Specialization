@@ -32,7 +32,7 @@ def integrator(func_x, x_0, t_0, t_f, dt=0.1, norm_value=False, is_mrp=False):
 
     return state_summary
 
-def runge_kutta(func, x_0, t_0, t_f, dt=0.1, norm_value=False, is_mrp=False):
+def runge_kutta(func, x_0, t_0, t_f, dt=0.01, norm_value=False, is_mrp=False):
 
     state_summary = []
 
@@ -58,7 +58,6 @@ def runge_kutta(func, x_0, t_0, t_f, dt=0.1, norm_value=False, is_mrp=False):
         if is_mrp:
 
             if mrp_functions.mrp_is_long(x_n):
-                print("mrp is long: %.4f" % (np.linalg.norm(x_n)))
                 x_n = mrp_functions.get_shadow_mrp(x_n)
 
         state_summary.append(x_n)
