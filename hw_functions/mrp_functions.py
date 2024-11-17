@@ -1,11 +1,12 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from . import quaternions, helper_functions
 
 
 def mrp_is_long(mrp):
 
-    if np.linalg.norm(mrp) >= 1:
+    if np.linalg.norm(mrp) > 1:
         return True
 
     else:
@@ -56,3 +57,29 @@ def mrp_addition(mrp_2, mrp_1):
 
     else:
         return mrp
+
+def plot_mrp_norm_vs_time(mrp_summary, total_time):
+    """
+    Plots the norm of MRPs as a function of time.
+
+    Parameters:
+        mrp_summary (ndarray): Array of MRP and state history from the integrator, shape (N, 6),
+                               where the first three columns correspond to the MRPs.
+        total_time (float): Total simulation time in seconds.
+    """
+    # Generate the time array based on the number of simulation steps
+    mrp_summary = np.array(mrp_summary)
+    num_steps = mrp_summary.shape[0]
+    time_array = np.linspace(0, total_time, num_steps)
+
+    # Compute the norm of the MRPs at each time step
+    mrp_norms = np.linalg.norm(mrp_summary[:, :3], axis=1)
+    
+    # Plot the MRP norm over time
+    plt.figure(figsize=(10, 6))
+    plt.plot(time_array, mrp_norms, label="MRP Norm", linewidth=2)
+    plt.xlabel("Time (s)", fontsize=14)
+    plt.ylabel("MRP Norm", fontsize=14)
+    plt.title("MRP Norm as a Function of Time", fontsize=16)
+    plt.grid(True)
+    plt.legend(fontsize=12)

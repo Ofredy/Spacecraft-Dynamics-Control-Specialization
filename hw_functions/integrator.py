@@ -57,8 +57,8 @@ def runge_kutta(func, x_0, t_0, t_f, dt=0.01, norm_value=False, is_mrp=False):
 
         if is_mrp:
 
-            if mrp_functions.mrp_is_long(x_n):
-                x_n = mrp_functions.get_shadow_mrp(x_n)
+            if mrp_functions.mrp_is_long(x_n[:3]):
+                x_n[:3] = mrp_functions.get_shadow_mrp(x_n[:3])
 
         state_summary.append(x_n)
 
