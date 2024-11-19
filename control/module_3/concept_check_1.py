@@ -46,6 +46,15 @@ print(np.linalg.norm(mrp_sum[3000][:3]))
 ############################# problem 5 #############################
 
 # using k to denote timestep for this problem
+inertia_tensor = np.array([[ 100.0, 0.0, 0.0 ],
+                           [ 0.0, 75.0, 0.0 ],
+                           [ 0.0, 0.0, 80.0 ]])
+
+k = 5 # Nm
+p = np.array([[ 10.0, 0.0, 0.0 ],
+              [ 0.0, 10.0, 0.0 ],
+              [ 0.0, 0.0, 10.0 ]])
+
 dt = 0.01
 f = 0.05
 
@@ -84,14 +93,9 @@ def get_target_info(t, dt):
     w_r_n_k = get_target_w_r_n(t)
 
     # solving for  w_r_n_dot_k
-    w_r_n_dot_k = ( get_target_w_r_n(t+dt) - w_r_n_k ) / dt
+    w_r_n_dot_k = ( w_r_n_k - get_target_w_r_n(t-dt) ) / dt
 
     return mrp_r_n_k, w_r_n_k, w_r_n_dot_k
-
-def get_w_b_r_k(mrp_b_r_k, w_b_n_k, w_r_n_k):
-
-    b_r_dcm = mrp_functions.mrp_to_dcm(mrp_b_r_k)
-    return w_b_n_k - b_r_dcm @ w_r_n_k
 
 def get_mrp_b_r(mrp_b_n_k, mrp_r_n_k):
     """
@@ -158,12 +162,14 @@ def get_att_track_state_dot(x_k, t):
     mrp_b_n_tilde = helper_functions.get_tilde_matrix(mrp_b_n_k)
 
     mrp_b_r_k = get_mrp_b_r(mrp_b_n_k, mrp_r_n_k)
-    w_b_r_k = get_w_b_r_k(mrp_b_r_k, w_b_n_k, w_r_n_k)
+    mrp_b_r_dcm = mrp_functions.mrp_to_dcm(mrp_b_r_k)
 
-    mrp_b_n_dot = ( 1/4 ) * ( ( 1 - mrp_b_n_norm**2 ) * np.eye(3) + 2 * mrp_b_n_tilde + 2 * np.outer(mrp_b_n_k, mrp_b_n_k) ) @ w_b_r_k
+    w_b_r_k = w_b_n_k - mrp_b_r_dcm @ w_r_n_k
+
+    mrp_b_n_dot = ( 1/4 ) * ( ( 1 - mrp_b_n_norm**2 ) * np.eye(3) + 2 * mrp_b_n_tilde + 2 * np.outer(mrp_b_n_k, mrp_b_n_k) ) @ w_b_n_k
 
     # solving for w_b_n_dot_k
-    w_b_n_dot = np.linalg.inv(inertia_tensor) @ get_att_reg_control_n(x_k) 
+    w_b_n_dot = np.linalg.inv(inertia_tensor) @ get_att_track_control_k(x_k, t) 
 
     return np.concatenate( [ mrp_b_n_dot, w_b_n_dot ])
 
@@ -176,5 +182,5 @@ def get_track_error_at_time(mrp_sum, time, dt=0.01):
     print(np.linalg.norm(mrp_b_r))
 
 
-mrp_sum = integrator.runge_kutta(get_att_track_state_dot, x_0, 0, 120, is_mrp=True)
-get_track_error_at_time(mrp_sum, 40)
+mrp_sum = integrator.runge_kutta(get_att_track_state_dot, x_0, 0, 120, is_mrp=True, dt=dt)
+get_track_error_at_time(mrp_sum, 40, dt=dt)
