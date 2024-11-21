@@ -181,6 +181,34 @@ def get_track_error_at_time(mrp_sum, time, dt=0.01):
     mrp_b_r = get_mrp_b_r(mrp_b_n_k, mrp_r_n_k)
     print(np.linalg.norm(mrp_b_r))
 
+def get_mean_absolute_error(mrp_sum, time_span, dt=0.01):
+    """
+    Calculate the mean absolute error for the attitude tracking over a given time span.
+    
+    Args:
+        mrp_sum: Array of MRPs and angular velocities at each time step (state history).
+        time_span: Total simulation time in seconds.
+        dt: Time step size.
+    
+    Returns:
+        Mean absolute error (MAE) for attitude tracking.
+    """
+    num_steps = int(time_span / dt)  # Number of time steps
+    error_sum = 0  # Initialize error accumulator
+    
+    for i in range(num_steps):
+        current_time = i * dt
+        mrp_b_n_k = mrp_sum[i][:3]  # Extract current MRP_B/N
+        mrp_r_n_k = get_target_mrp_r_n(current_time)  # Get target MRP_R/N at current time
+        
+        # Compute relative MRP (MRP_B/R)
+        mrp_b_r = get_mrp_b_r(mrp_b_n_k, mrp_r_n_k)
+        error_sum += np.linalg.norm(mrp_b_r)  # Add the norm of the relative MRP
+    
+    mean_absolute_error = error_sum / num_steps  # Compute the mean of the errors
+    return mean_absolute_error
 
 mrp_sum = integrator.runge_kutta(get_att_track_state_dot, x_0, 0, 120, is_mrp=True, dt=dt)
-get_track_error_at_time(mrp_sum, 40, dt=dt)
+get_track_error_at_time(mrp_sum, 120, dt=dt)
+
+print(get_mean_absolute_error(mrp_sum, 120))
