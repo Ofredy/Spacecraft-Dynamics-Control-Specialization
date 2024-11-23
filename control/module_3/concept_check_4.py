@@ -33,9 +33,7 @@ dt = 0.01
 f = 0.05
 
 mrp_b_n_0 = np.array([ 0.1, 0.2, -0.1 ])
-w_b_n_0 = np.array([ 30.0, 10.0, -20.0 ]) * np.pi / 180
-
-x_0 = np.concatenate([mrp_b_n_0, w_b_n_0, np.array([ 0.0, 0.0, 0.0 ])])
+w_b_n_0 = np.array([ 3.0, 1.0, -2.0 ]) * np.pi / 180
 
 unmodeled_torque = np.array([ 0.5, -0.3, 0.2 ])
 
@@ -100,7 +98,8 @@ def get_att_track_control_k(x_k, t):
     # State decomposition
     mrp_b_n_k = x_k[:3]  # MRP_B/N
     w_b_n_k = x_k[3:6]   # Angular velocity_B/N (in B)
-    state_sum = x_k[6:]
+    state_sum = x_k[6:9]
+    w_b_r_0 = x_k[9:]
 
     # Target info
     mrp_r_n_k, w_r_n_k, w_r_n_dot_k = get_target_info(t, dt)  # Target MRP and angular velocity
@@ -120,7 +119,7 @@ def get_att_track_control_k(x_k, t):
     control_torque = (
         -k * mrp_b_r_k                         # Proportional term (error in attitude)
         - ( p + k_integral * p @ inertia_tensor ) @ w_b_r_k # Damping term (relative angular velocity)
-        - k * k_integral * p @ state_sum + k_integral * p @ inertia_tensor @ w_b_r_k # integral term
+        - k * k_integral * p @ state_sum + k_integral * p @ inertia_tensor @ w_b_r_0 # integral term
         + inertia_tensor @ (w_r_n_dot_b - np.cross(w_b_n_k, w_r_n_b))  # Inertia term
     )
 
@@ -151,9 +150,9 @@ def get_att_track_state_dot(x_k, t):
     w_b_n_dot = np.linalg.inv(inertia_tensor) @ ( get_att_track_control_k(x_k, t) + unmodeled_torque ) 
 
     # tracking state_sum
-    state_sum = mrp_b_n_k * dt 
+    state_sum_dot = mrp_b_r_k
 
-    return np.concatenate( [ mrp_b_n_dot, w_b_n_dot, state_sum ])
+    return np.concatenate( [ mrp_b_n_dot, w_b_n_dot, state_sum_dot, np.array([ 0.0, 0.0, 0.0 ]) ])
 
 def get_track_error_at_time(mrp_sum, time, dt=0.01):
 
@@ -189,6 +188,13 @@ def get_mean_absolute_error(mrp_sum, time_span, dt=0.01):
     
     mean_absolute_error = error_sum / num_steps  # Compute the mean of the errors
     return mean_absolute_error
+
+
+mrp_b_r_0 = get_mrp_b_r(mrp_b_n_0, get_target_mrp_r_n(0))
+mrp_b_r_dcm = mrp_functions.mrp_to_dcm(mrp_b_r_0)
+w_b_r_0 = w_b_n_0 - mrp_b_r_dcm @ get_target_w_r_n(0)
+
+x_0 = np.concatenate([mrp_b_n_0, w_b_n_0, np.zeros(3), w_b_r_0])
 
 mrp_sum = integrator.runge_kutta(get_att_track_state_dot, x_0, 0, 120, is_mrp=True, dt=dt)
 get_track_error_at_time(mrp_sum, 45, dt=dt)
@@ -202,7 +208,7 @@ inertia_tensor = np.array([[ 100.0, 0.0, 0.0 ],
                            [ 0.0, 0.0, 80.0 ]])
 
 k = 5 # Nm
-k_integral = 0.00 # Nm
+k_integral = 0.000 # Nm
 p = np.array([[ 10.0, 0.0, 0.0 ],
               [ 0.0, 10.0, 0.0 ],
               [ 0.0, 0.0, 10.0 ]])
@@ -211,9 +217,7 @@ dt = 0.01
 f = 0.05
 
 mrp_b_n_0 = np.array([ 0.1, 0.2, -0.1 ])
-w_b_n_0 = np.array([ 30.0, 10.0, -20.0 ]) * np.pi / 180
-
-x_0 = np.concatenate([mrp_b_n_0, w_b_n_0, np.array([ 0.0, 0.0, 0.0 ])])
+w_b_n_0 = np.array([ 3.0, 1.0, -2.0 ]) * np.pi / 180
 
 unmodeled_torque = np.array([ 0.5, -0.3, 0.2 ])
 
@@ -278,7 +282,8 @@ def get_att_track_control_k(x_k, t):
     # State decomposition
     mrp_b_n_k = x_k[:3]  # MRP_B/N
     w_b_n_k = x_k[3:6]   # Angular velocity_B/N (in B)
-    state_sum = x_k[6:]
+    state_sum = x_k[6:9]
+    w_b_r_0 = x_k[9:]
 
     # Target info
     mrp_r_n_k, w_r_n_k, w_r_n_dot_k = get_target_info(t, dt)  # Target MRP and angular velocity
@@ -298,7 +303,7 @@ def get_att_track_control_k(x_k, t):
     control_torque = (
         -k * mrp_b_r_k                         # Proportional term (error in attitude)
         - ( p + k_integral * p @ inertia_tensor ) @ w_b_r_k # Damping term (relative angular velocity)
-        - k * k_integral * p @ state_sum + k_integral * p @ inertia_tensor @ w_b_n_0 # integral term
+        - k * k_integral * p @ state_sum + k_integral * p @ inertia_tensor @ w_b_r_0 # integral term
         + inertia_tensor @ (w_r_n_dot_b - np.cross(w_b_n_k, w_r_n_b))  # Inertia term
     )
 
@@ -309,6 +314,7 @@ def get_att_track_state_dot(x_k, t):
     # spacecraft
     mrp_b_n_k = x_k[:3]
     w_b_n_k = x_k[3:6]
+    state_sum = x_k[6:]
 
     # target
     mrp_r_n_k, w_r_n_k, _ = get_target_info(t, dt)
@@ -328,9 +334,9 @@ def get_att_track_state_dot(x_k, t):
     w_b_n_dot = np.linalg.inv(inertia_tensor) @ ( get_att_track_control_k(x_k, t) + unmodeled_torque ) 
 
     # tracking state_sum
-    state_sum = mrp_b_n_k * dt 
+    state_sum_dot = mrp_b_r_k
 
-    return np.concatenate( [ mrp_b_n_dot, w_b_n_dot, state_sum ])
+    return np.concatenate( [ mrp_b_n_dot, w_b_n_dot, state_sum_dot, np.array([ 0.0, 0.0, 0.0 ]) ])
 
 def get_track_error_at_time(mrp_sum, time, dt=0.01):
 
@@ -366,6 +372,13 @@ def get_mean_absolute_error(mrp_sum, time_span, dt=0.01):
     
     mean_absolute_error = error_sum / num_steps  # Compute the mean of the errors
     return mean_absolute_error
+
+
+mrp_b_r_0 = get_mrp_b_r(mrp_b_n_0, get_target_mrp_r_n(0))
+mrp_b_r_dcm = mrp_functions.mrp_to_dcm(mrp_b_r_0)
+w_b_r_0 = w_b_n_0 - mrp_b_r_dcm @ get_target_w_r_n(0)
+
+x_0 = np.concatenate([mrp_b_n_0, w_b_n_0, np.zeros(3), w_b_r_0])
 
 mrp_sum = integrator.runge_kutta(get_att_track_state_dot, x_0, 0, 120, is_mrp=True, dt=dt)
 get_track_error_at_time(mrp_sum, 35, dt=dt)
