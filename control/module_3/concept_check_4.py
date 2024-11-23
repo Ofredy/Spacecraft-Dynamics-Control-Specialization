@@ -200,7 +200,7 @@ mrp_sum = integrator.runge_kutta(get_att_track_state_dot, x_0, 0, 120, is_mrp=Tr
 get_track_error_at_time(mrp_sum, 45, dt=dt)
 
 
-############################# problem 2 #############################
+############################# problem 4 #############################
 
 # using k to denote timestep for this problem
 inertia_tensor = np.array([[ 100.0, 0.0, 0.0 ],
