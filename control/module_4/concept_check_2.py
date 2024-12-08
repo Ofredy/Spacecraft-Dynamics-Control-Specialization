@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from hw_functions import integrator, helper_functions
 
 
-################## problem 2 ##################
+################## problem 2 & 3 ##################
 
 inertia_tensor = np.array([[ 100.0, 0.0, 0.0 ],
                            [ 0.0, 75.0, 0.0 ],
@@ -25,7 +25,7 @@ def get_linear_control(x_k):
         ((4 * k) / (1 + mrp_norm**2)) - w_norm**2 / 2
     ) * np.eye(3)
     
-    return -control_matrix @ mrp_k
+    return -control_matrix @ mrp_k - p @ w_k
 
 def get_state_dot(x_k, t):
 
@@ -36,7 +36,7 @@ def get_state_dot(x_k, t):
     mrp_tilde = helper_functions.get_tilde_matrix(mrp_k)  # Skew-symmetric matrix
     mrp_dot = (1 / 4) * ((1 - sigma_norm**2) * np.eye(3) + 2 * mrp_tilde + 2 * np.outer(mrp_k, mrp_k)) @ w_k
 
-    w_dot = np.linalg.inv(inertia_tensor) @ ( get_linear_control(x_k) - helper_functions.get_tilde_matrix(w_k) @ inertia_tensor @ w_k )
+    w_dot =  get_linear_control(x_k) 
 
     return np.concatenate([ mrp_dot, w_dot ])
 
@@ -81,6 +81,3 @@ mrp_sum = integrator.runge_kutta(get_state_dot, x_0, 0, 120, is_mrp=True)
 print(np.linalg.norm(mrp_sum[5000][:3]))
 plot_mrp(mrp_sum)
 plt.show()
-
-
-################## problem 3 ##################
